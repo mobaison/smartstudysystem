@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Schedule</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #13847e;
+    }
+    header {
+      text-align: center;
+      padding: 1rem;
+      background: #42d5e0;
+      color: white;
+    }
+    .form-container {
+      max-width: 500px;
+      margin: 2rem auto;
+      padding: 2rem;
+      background: #dcb4ec8e;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    .form-container input, .form-container button {
+      width: 100%;
+      padding: 0.8rem;
+      margin: 0.5rem 0;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .schedule-list {
+      max-width: 500px;
+      margin: 2rem auto;
+      padding: 1rem;
+      background: #f1f1f1;
+      border-radius: 8px;
+    }
+    .schedule-item {
+      padding: 0.8rem;
+      margin: 0.5rem 0;
+      background: #e3f2fd;
+      border: 1px solid #bbdefb;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .schedule-item .buttons button {
+      margin-left: 5px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Schedule Planner</h1>
+  </header>
+
+  <div class="form-container">
+    <h2>Add Schedule</h2>
+    <form id="scheduleForm">
+      <input type="text" id="taskName" placeholder="Task Name" required>
+      <input type="datetime-local" id="taskDate" required>
+      <button type="submit">Add to Schedule</button>
+    </form>
+  </div>
+
+  <div class="schedule-list" id="scheduleList">
+    <h2>Your Schedules</h2>
+  </div>
+
+  <script>
+    const scheduleForm = document.getElementById('scheduleForm');
+    const scheduleList = document.getElementById('scheduleList');
+  
+    // Load existing schedules from localStorage and sort them by time
+    function loadSchedule() {
+      const storedSchedule = JSON.parse(localStorage.getItem('scheduleArray')) || [];
+      
+      // Sort the tasks by time (nearest to the current time first)
+      storedSchedule.sort((a, b) => new Date(a.taskDate) - new Date(b.taskDate));
+  
+      // Clear existing items in the schedule list
+      scheduleList.innerHTML = '<h2>Your Schedules</h2>';
+  
+      // Add sorted tasks to the schedule list
+      storedSchedule.forEach((item, index) => {
+        addScheduleItemToList(item.taskName, item.taskDate, index);
+      });
+    }
+  
+    // Save schedule to localStorage
+    function saveSchedule(scheduleArray) {
+      localStorage.setItem('scheduleArray', JSON.stringify(scheduleArray));
+    }
+  
+    // Add a schedule item to the list with Edit and Delete buttons
+    function addScheduleItemToList(taskName, taskDate, index) {
+      const scheduleItem = document.createElement('div');
+      scheduleItem.className = 'schedule-item';
+      scheduleItem.innerHTML = `
+        <span>${taskName} - ${new Date(taskDate).toLocaleString()}</span>
+        <div class="buttons">
+          <button class="edit" onclick="editSchedule(${index})">Edit</button>
+          <button class="delete" onclick="deleteSchedule(${index})">Delete</button>
+        </div>
+      `;
+  
+      scheduleList.appendChild(scheduleItem);
+    }
+  
+    // Handle form submission
+    scheduleForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+  
+      const taskName = document.getElementById('taskName').value;
+      const taskDate = document.getElementById('taskDate').value;
+      const scheduleArray = JSON.parse(localStorage.getItem('scheduleArray')) || [];
+  
+      // Add new task to the schedule array
+      scheduleArray.push({ taskName, taskDate });
+  
+      // Save and reload the sorted schedule
+      saveSchedule(scheduleArray);
+      loadSchedule();
+  
+      scheduleForm.reset();
+    });
+  
+    // Delete a schedule item
+    function deleteSchedule(index) {
+      const scheduleArray = JSON.parse(localStorage.getItem('scheduleArray')) || [];
+      scheduleArray.splice(index, 1); // Remove the item at the given index
+      saveSchedule(scheduleArray);
+      loadSchedule(); // Reload the schedule list
+    }
+  
+    // Edit a schedule item
+    function editSchedule(index) {
+      const scheduleArray = JSON.parse(localStorage.getItem('scheduleArray')) || [];
+      const item = scheduleArray[index];
+  
+      // Create input fields for editing
+      const scheduleItem = scheduleList.children[index];
+      scheduleItem.innerHTML = `
+        <input type="text" id="editTaskName" value="${item.taskName}">
+        <input type="datetime-local" id="editTaskDate" value="${item.taskDate}">
+        <div class="buttons">
+          <button class="save" onclick="saveEdit(${index})">Save</button>
+          <button class="cancel" onclick="loadSchedule()">Cancel</button>
+        </div>
+      `;
+    }
+  
+    // Save the edited schedule item
+    function saveEdit(index) {
+      const scheduleArray = JSON.parse(localStorage.getItem('scheduleArray')) || [];
+      const updatedTaskName = document.getElementById('editTaskName').value;
+      const updatedTaskDate = document.getElementById('editTaskDate').value;
+  
+      // Update the schedule item
+      scheduleArray[index] = { taskName: updatedTaskName, taskDate: updatedTaskDate };
+      saveSchedule(scheduleArray);
+      loadSchedule(); // Reload the schedule list
+    }
+  
+    // Load schedules on page load
+    window.addEventListener('load', loadSchedule);
+  </script>
+</body>
+</html>

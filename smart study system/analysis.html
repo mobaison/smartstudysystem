@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Study Analysis</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to bottom right, #8bb3cf, #8fe1ce);
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1, h2 {
+      text-align: center;
+    }
+
+    .chart-container {
+      width: 80%;
+      margin: 20px auto;
+    }
+
+    table {
+      width: 80%;
+      margin: 20px auto;
+      border-collapse: collapse;
+    }
+
+    table th, table td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+
+    table th {
+      background: #6a96da;
+      color: rgb(216, 216, 216);
+    }
+  </style>
+</head>
+<body>
+  <h1>Study Analysis</h1>
+  <h2>Study Hours Data</h2>
+  <div class="chart-container">
+    <canvas id="lineChart"></canvas>
+  </div>
+  <h2>Study Hours by Subject</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Subject</th>
+        <th>Total Time (HH:MM:SS)</th>
+        <th>Percentage Completed</th>
+      </tr>
+    </thead>
+    <tbody id="study-table-body">
+      <!-- Data will be inserted here dynamically -->
+    </tbody>
+  </table>
+
+  <script>
+    // Function to format time in HH:MM:SS (taking seconds and converting to hours, minutes, and seconds)
+    function formatTimeInHoursMinutesSeconds(seconds) {
+      const hrs = Math.floor(seconds / 3600);  // Convert seconds to hours
+      const mins = Math.floor((seconds % 3600) / 60); // Remaining minutes
+      const secs = Math.floor(seconds % 60); // Remaining seconds
+      return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    // Subject-specific goal times (in hours)
+    const subjectGoals = {
+      "Software Development": 60,
+      "OOPS in JAVA": 60,
+      "DSA in C": 40,
+      "MATHS": 40,
+      "PLC": 40,
+      "ETC": 20,
+      "SOCIAL CONNECTIVITY": 20
+    };
+
+    function fetchData() {
+      const studyData = JSON.parse(localStorage.getItem("studyData")) || {};  // Fetch data from localStorage
+      const studyTimes = [];
+      const labels = [];
+      const percentages = [];
+
+      // Loop over each subject
+      Object.keys(subjectGoals).forEach(subject => {
+        const timeStudiedInMinutes = studyData[subject] || 0; // Default to 0 if no data
+        const timeStudiedInSeconds = timeStudiedInMinutes * 60; // Convert to seconds
+        const goalInSeconds = subjectGoals[subject] * 3600;  // Convert goal time to seconds
+        const percentage = (timeStudiedInSeconds / goalInSeconds) * 100;
+
+        // Store the time studied in hours for the chart
+        studyTimes.push(timeStudiedInSeconds / 3600);  // Convert to hours for chart
+        labels.push(subject);
+        percentages.push(percentage);
+
+        // Format time in HH:MM:SS format for table display
+        const formattedTime = formatTimeInHoursMinutesSeconds(timeStudiedInSeconds);
+
+        // Create a row for the table with subject, formatted time, and percentage
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${subject}</td>
+          <td>${formattedTime}</td> <!-- Time formatted as HH:MM:SS -->
+          <td>${percentage.toFixed(2)}%</td> <!-- Percentage of completion -->
+        `;
+        document.getElementById("study-table-body").appendChild(row);
+      });
+
+      // Create the graph (bar chart)
+      const ctx = document.getElementById("lineChart").getContext("2d");
+
+      const datasets = [{
+        label: "Study Hours",
+        data: studyTimes, // Data in hours for the Y-axis
+        borderColor: "#8e44ad",
+        backgroundColor: "rgba(142, 68, 173, 0.3)",
+        borderWidth: 2,
+        tension: 0.4,
+      }];
+
+      new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: datasets,
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: "top" },
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: "Time (Hours)" // Y-axis label changed to "Time (Hours)"
+              },
+              ticks: {
+                stepSize: 1, // Adjust step size for y-axis in hours
+                callback: function(value) {
+                  return value.toFixed(2); // Format ticks to 2 decimal places for hours
+                }
+              }
+            },
+          },
+        },
+      });
+    }
+
+    window.onload = fetchData;
+  </script>
+</body>
+</html>

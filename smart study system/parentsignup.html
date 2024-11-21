@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parent Sign Up</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: linear-gradient(to bottom right, #d3eaff, #ffffff), url('https://source.unsplash.com/800x600/?education,family') no-repeat center center;
+      background-size: cover;
+    }
+    .form-container {
+      width: 400px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    h2 {
+      margin-bottom: 20px;
+      text-align: center;
+      color: #007bff;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    .error {
+      margin-top: 10px;
+      color: red;
+      font-size: 0.9em;
+      text-align: center;
+    }
+    .switch-link {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .switch-link a {
+      color: #007bff;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    .switch-link a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <h2>Parent Sign Up</h2>
+    <input type="text" id="parentName" placeholder="Enter Your Name" required>
+    <input type="text" id="studentName" placeholder="Enter Your Student's Name" required>
+    <input type="email" id="parentEmail" placeholder="Enter Your Email" required>
+    <input type="password" id="parentPassword" placeholder="Create Password" required>
+    <button id="parentSignupBtn">Sign Up</button>
+    <div class="error" id="signupError"></div>
+
+    <div class="switch-link">
+      <a href="parentsignin.html">Already have an account? Log In</a>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('parentSignupBtn').addEventListener('click', () => {
+      const parentName = document.getElementById('parentName').value.trim();
+      const studentName = document.getElementById('studentName').value.trim();
+      const parentEmail = document.getElementById('parentEmail').value.trim();
+      const parentPassword = document.getElementById('parentPassword').value.trim();
+
+      if (!parentName || !studentName || !parentEmail || !parentPassword) {
+        document.getElementById('signupError').textContent = 'All fields are required.';
+        return;
+      }
+
+      // Store the parent data in localStorage
+      localStorage.setItem('parentName', parentName);
+      localStorage.setItem('studentName', studentName);
+      localStorage.setItem('parentEmail', parentEmail);
+      localStorage.setItem('parentPassword', parentPassword);
+
+      alert('Sign-Up Successful! You can now log in.');
+      window.location.href = 'parent-signin.html'; // Redirect to Parent Sign-In page
+    });
+  </script>
+</body>
+</html>

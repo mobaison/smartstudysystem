@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reminders</title>
+  <style>
+    /* Same styling as before */
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3e6ff;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #8e44ad;
+    }
+
+    .reminder-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .reminder-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .reminder-item:last-child {
+      border-bottom: none;
+    }
+
+    .description {
+      color: #555;
+    }
+
+    .date {
+      color: #8e44ad;
+      font-weight: bold;
+    }
+
+    .highlight {
+      background-color: #ffec99;
+      border: 2px solid #ffcc00;
+    }
+  </style>
+</head>
+<body>
+  <h1>Your Reminders</h1>
+  <div class="reminder-container" id="reminderList">
+    <!-- Dynamic reminders will be inserted here -->
+  </div>
+
+  <script>
+    const reminderList = document.getElementById('reminderList');
+
+    // Load user phone number from localStorage
+    const userPhone = localStorage.getItem('userPhone');
+
+    // Function to send WhatsApp message (this would be an API call in a real application)
+    function sendWhatsAppMessage(phoneNumber, taskName, taskDate) {
+      if (!phoneNumber) return;
+
+      // Example API call (Replace with actual API for WhatsApp message)
+      const message = `Reminder: You have a scheduled task: "${taskName}" at ${new Date(taskDate).toLocaleString()}`;
+      console.log(`Sending WhatsApp message to ${phoneNumber}: ${message}`);
+      
+      // In a real application, use something like Twilio's API or another service
+      // Example for Twilio (needs server-side code):
+      // twilioClient.messages.create({
+      //   body: message,
+      //   from: 'whatsapp:+14155238886',  // Your Twilio WhatsApp number
+      //   to: `whatsapp:${phoneNumber}`
+      // });
+    }
+
+    // Function to check schedules and send reminders
+    function checkReminders() {
+      const scheduleArray = JSON.parse(localStorage.getItem('scheduleArray')) || [];
+
+      // Sort tasks by time (nearest first)
+      scheduleArray.sort((a, b) => new Date(a.taskDate) - new Date(b.taskDate));
+
+      // Clear existing reminders
+      reminderList.innerHTML = '';
+
+      // Iterate over tasks to display reminders
+      scheduleArray.forEach((item, index) => {
+        const taskDate = new Date(item.taskDate);
+        const currentTime = new Date();
+        const timeDifference = taskDate - currentTime;
+
+        // Display reminders
+        const reminderItem = document.createElement('div');
+        reminderItem.className = 'reminder-item';
+        reminderItem.innerHTML = `
+          <span>${item.taskName}</span>
+          <span class="date">${taskDate.toLocaleString()}</span>
+        `;
+
+        reminderList.appendChild(reminderItem);
+
+        // Highlight the first item (nearest reminder)
+        if (index === 0) {
+          reminderItem.classList.add('highlight');
+        }
+
+        // Check if the time is within 2 hours
+        if (timeDifference <= 2 * 60 * 60 * 1000 && timeDifference > 0) {
+          // Send WhatsApp reminder
+          sendWhatsAppMessage(userPhone, item.taskName, item.taskDate);
+        }
+      });
+    }
+
+    // Load reminders on page load and check for time-sensitive reminders
+    window.addEventListener('load', checkReminders);
+  </script>
+</body>
+</html>

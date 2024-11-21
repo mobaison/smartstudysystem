@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pomodoro Timer with Face Detection</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(to bottom right, #e3f2fd, #6db0a1);
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
+    }
+
+    .timer-container {
+      text-align: center;
+      background: #c698da;
+      color: rgb(70, 30, 67);
+      padding: 40px 60px;
+      border-radius: 15px;
+      box-shadow: 0 6px 20px rgba(41, 12, 12, 0.3);
+      width: 400px;
+    }
+
+    .timer-container h1 {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+    }
+
+    select {
+      padding: 10px;
+      font-size: 1rem;
+      background-color: #81aedf;
+      border: none;
+      border-radius: 5px;
+      width: 100%;
+      margin-top: 15px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .time-display {
+      font-size: 4rem;
+      margin: 30px 20px;
+      padding: 10px 30px;
+      background: #9676ab;
+      border-radius: 10px;
+      width: 80%;
+      margin: 0 auto;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .controls button {
+      margin: 10px;
+      padding: 15px 30px;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: all 0.3s ease;
+      outline: none;
+    }
+
+    .controls button.start {
+      background-color: #67cfae;
+      color: white;
+    }
+
+    .controls button.start:hover {
+      background-color: #4c8966;
+    }
+
+    .controls button.pause {
+      background-color: #dab87d;
+      color: white;
+    }
+
+    .controls button.pause:hover {
+      background-color: #e67e22;
+    }
+
+    .controls button.stop {
+      background-color: #9b6059;
+      color: white;
+    }
+
+    .controls button.stop:hover {
+      background-color: #a53e33;
+    }
+
+    video {
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      .timer-container {
+        padding: 30px 50px;
+      }
+
+      .time-display {
+        font-size: 3rem;
+      }
+
+      .controls button {
+        font-size: 1rem;
+        padding: 12px 25px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="timer-container">
+    <h1>Pomodoro Timer</h1>
+    <label for="subject">Select Subject:</label>
+    <select id="subject">
+      <option value="DSA in C">DSA in C</option>
+      <option value="OOPS in JAVA">OOPS in JAVA</option>
+      <option value="MATHS">MATHS</option>
+      <option value="SOFTWARE DEVELOPMENT">SOFTWARE DEVELOPMENT</option>
+      <option value="PLC">PLC</option>
+      <option value="ETC">ETC</option>
+      <option value="SOCIAL CONNECTIVITY">SOCIAL CONNECTIVITY</option>
+    </select>
+    <div class="time-display" id="time-display">45:00</div>
+    <div class="controls">
+      <button class="start" onclick="startPomodoro()">Start</button>
+      <button class="pause" onclick="pausePomodoro()">Pause</button>
+      <button class="stop" onclick="stopPomodoro()">Stop</button>
+    </div>
+  </div>
+
+  <video id="video" autoplay></video>
+
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
+  <script>
+    let timer;
+    let timeLeft = 45 * 60; // Initial time in seconds (45 minutes)
+    let isPaused = true;
+    let isFaceDetectionActive = false;
+    let isFaceDetected = false;
+    let accumulatedTime = 0; // Accumulated time in seconds for the current subject
+
+    const video = document.getElementById("video");
+    const faceMesh = new FaceMesh({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
+    });
+
+    faceMesh.setOptions({
+      maxNumFaces: 1,
+      refineLandmarks: true,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5,
+    });
+
+    const camera = new Camera(video, {
+      onFrame: async () => {
+        await faceMesh.send({ image: video });
+      },
+      width: 640,
+      height: 480,
+    });
+
+    faceMesh.onResults((results) => {
+      isFaceDetected = results.multiFaceLandmarks.length > 0;
+    });
+
+    // Format time in MM:SS format
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    // Update the timer display
+    function updateDisplay() {
+      document.getElementById("time-display").textContent = formatTime(timeLeft);
+
+      // Update accumulated time for the selected subject
+      const subject = document.getElementById("subject").value;
+      const studyData = JSON.parse(localStorage.getItem("studyData")) || {};
+      if (!studyData[subject]) {
+        studyData[subject] = 0;
+      }
+
+      // Add elapsed time to the accumulated time for the current subject
+      studyData[subject] += accumulatedTime / 60; // Convert to minutes
+      localStorage.setItem("studyData", JSON.stringify(studyData));
+      accumulatedTime = 0; // Reset accumulated time
+    }
+
+    // Start the Pomodoro timer and face detection
+    function startPomodoro() {
+      if (!isPaused || isFaceDetectionActive) return; // Prevent multiple starts
+      isPaused = false;
+      isFaceDetectionActive = true;
+
+      camera.start();
+
+      timer = setInterval(() => {
+        if (!isPaused) {
+          if (isFaceDetected) {
+            if (timeLeft > 0) {
+              timeLeft--;
+              accumulatedTime++;
+              updateDisplay();
+            } else {
+              stopPomodoro();
+              alert("Session completed!");
+            }
+          }
+        }
+      }, 1000);
+    }
+
+    // Pause the Pomodoro timer and face detection
+    function pausePomodoro() {
+      isPaused = true;
+      clearInterval(timer);
+      camera.stop();
+      isFaceDetectionActive = false;
+    }
+
+    // Stop the Pomodoro timer and reset everything
+    function stopPomodoro() {
+      clearInterval(timer);
+      camera.stop();
+      isPaused = true;
+      isFaceDetectionActive = false;
+      timeLeft = 45 * 60; // Reset timer
+      updateDisplay();
+    }
+
+    updateDisplay(); // Initial display update
+  </script>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parent Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to bottom right, #ffccd5, #ffffff);
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1, h2 {
+      text-align: center;
+    }
+
+    .chart-container {
+      width: 80%;
+      margin: 20px auto;
+    }
+
+    table {
+      width: 80%;
+      margin: 20px auto;
+      border-collapse: collapse;
+    }
+
+    table th, table td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+
+    table th {
+      background: #d16ba5;
+      color: #ffffff;
+    }
+  </style>
+</head>
+<body>
+  <h1>Parent Dashboard</h1>
+  <h2>Student Study Hours Data</h2>
+  <div class="chart-container">
+    <canvas id="lineChart"></canvas>
+  </div>
+  <h2>Study Hours by Subject</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Subject</th>
+        <th>Total Time (MM:SS)</th>
+        <th>Percentage Completed</th>
+      </tr>
+    </thead>
+    <tbody id="study-table-body">
+      <!-- Data will be inserted here dynamically -->
+    </tbody>
+  </table>
+
+  <script>
+    // Reusing the provided functions for data processing and rendering
+    function formatTimeInMinutesAndSeconds(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    const subjectGoals = {
+      "Software Development": 60,
+      "OOPS in JAVA": 60,
+      "DSA in C": 40,
+      "MATHS": 40,
+      "PLC": 40,
+      "ETC": 20,
+      "SOCIAL CONNECTIVITY": 20
+    };
+
+    function fetchParentDashboardData() {
+      const studyData = JSON.parse(localStorage.getItem("studyData")) || {};
+      const studyTimes = [];
+      const labels = [];
+      const percentages = [];
+
+      Object.keys(subjectGoals).forEach(subject => {
+        const timeStudiedInSeconds = studyData[subject] || 0;
+        const percentage = (timeStudiedInSeconds / (subjectGoals[subject] * 3600)) * 100;
+
+        studyTimes.push(timeStudiedInSeconds);
+        labels.push(subject);
+        percentages.push(percentage);
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${subject}</td>
+          <td>${formatTimeInMinutesAndSeconds(timeStudiedInSeconds)}</td>
+          <td>${percentage.toFixed(2)}%</td>
+        `;
+        document.getElementById("study-table-body").appendChild(row);
+      });
+
+      const ctx = document.getElementById("lineChart").getContext("2d");
+      const studyTimesInHours = studyTimes.map(time => time / 3600);
+
+      new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: [{
+            label: "Study Hours",
+            data: studyTimesInHours,
+            backgroundColor: "rgba(209, 107, 165, 0.3)",
+            borderColor: "#d16ba5",
+            borderWidth: 2,
+            tension: 0.4,
+          }],
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: "top" },
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: "Time (Hours)"
+              },
+              ticks: {
+                stepSize: 1,
+                callback: function(value) {
+                  return value.toFixed(2);
+                }
+              }
+            },
+          },
+        },
+      });
+    }
+
+    window.onload = fetchParentDashboardData;
+  </script>
+</body>
+</html>
